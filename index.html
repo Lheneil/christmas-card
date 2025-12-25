@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magical 3D Christmas Card - Lheneil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --card-width: 350px;
+            --card-height: 520px;
+            --deep-red: #8b0000;
+            --gold-gradient: linear-gradient(45deg, #d4af37, #f7e08a, #b8860b);
+            --forest-light: #0d2b1a; 
+            --forest-dark: #040d08;
+            --pine-green: linear-gradient(180deg, #134e1f 0%, #0a3215 100%);
+        }
+
+        @media (min-width: 600px) {
+            :root {
+                --card-width: 450px;
+                --card-height: 600px;
+            }
+        }
+
+        body {
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, var(--forest-light) 0%, var(--forest-dark) 100%);
+            perspective: 2000px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 150; 
+        }
+
+        .snow-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .flake {
+            position: absolute;
+            top: -50px;
+            color: rgba(255, 255, 255, 0.8);
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+        }
+
+        .card-wrapper {
+            position: relative;
+            width: var(--card-width);
+            height: var(--card-height);
+            transform-style: preserve-3d;
+            cursor: pointer;
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            animation: autoSway 4s ease-in-out infinite;
+        }
+
+        @keyframes autoSway {
+            0%, 100% { transform: rotateY(-8deg) rotateX(4deg); }
+            50% { transform: rotateY(8deg) rotateX(-4deg); }
+        }
+
+        .card-wrapper.open {
+            transform: translateX(25%) rotateY(0deg) rotateX(0deg) scale(1) !important;
+            animation: none;
+        }
+
+        .cover {
+            position: absolute;
+            width: 100%; height: 100%;
+            transform-origin: left;
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            z-index: 2;
+        }
+
+        .card-wrapper.open .cover { transform: rotateY(-135deg); }
+
+        .cover-front, .cover-back {
+            position: absolute;
+            width: 100%; height: 100%;
+            backface-visibility: hidden;
+            border-radius: 5px 15px 15px 5px;
+            border: 8px solid #d4af37;
+            box-sizing: border-box;
+        }
+
+        .cover-front {
+            background: radial-gradient(circle at center, #af1111, var(--deep-red));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 10px 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .cover-back {
+            background: #7a0000;
+            transform: rotateY(180deg);
+        }
+
+        .tree-container {
+            position: relative;
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.5));
+        }
+
+        .star {
+            color: #fff;
+            font-size: 50px;
+            text-shadow: 0 0 20px gold, 0 0 40px #fff;
+            z-index: 15;
+            animation: starGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes starGlow {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.1); filter: brightness(1.5); }
+        }
+
+        .branch {
+            width: 0; height: 0;
+            border-left: var(--w) solid transparent;
+            border-right: var(--w) solid transparent;
+            border-bottom: var(--h) solid #0a4d1c;
+            margin-top: var(--m);
+            background: var(--pine-green);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black);
+            position: relative;
+        }
+
+        .sparkle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px gold;
+            animation: twinkle 2s infinite ease-in-out;
+            opacity: 0;
+            z-index: 10;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .inside {
+            position: absolute;
+            width: 100%; height: 100%;
+            background-color: #fffdf5;
+            background-image: url("https://www.transparenttextures.com/patterns/felt.png");
+            border-radius: 5px;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .inside > * { opacity: 0; transform: translateY(20px); transition: 0.8s ease-out; }
+        .card-wrapper.open .inside > * { opacity: 1; transform: translateY(0); }
+
+        .inside h2 { transition-delay: 0.4s; color: var(--deep-red); font-family: 'Great Vibes', cursive; font-size: 2.8rem; margin: 0; }
+        
+        /* --- SIGNATURE SECTION --- */
+        .signature-container {
+            margin-top: 15px;
+            transition-delay: 1.2s;
+        }
+
+        .rainbow-text {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+            background-size: 400% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbowScroll 4s linear infinite;
+            display: block;
+            letter-spacing: 1px;
+            filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));
+        }
+
+        .name-text {
+            font-family: 'Great Vibes', cursive;
+            font-size: 2.2rem;
+            color: #000000;
+            display: block;
+            margin-top: -5px;
+            font-weight: normal;
+        }
+
+        @keyframes rainbowScroll {
+            to { background-position: 400% center; }
+        }
+
+        .santa-sleigh { 
+            position: absolute; 
+            font-size: 35px; 
+            bottom: 5px; 
+            white-space: nowrap;
+            animation: forward-only-fly 8s linear infinite; 
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+        }
+
+        .sleigh-box {
+            position: relative;
+            display: inline-block;
+        }
+
+        .santa-inside {
+            position: absolute;
+            font-size: 25px;
+            bottom: 12px;
+            right: 4px; 
+            z-index: 1;
+        }
+
+        .reindeer {
+            display: inline-block;
+            animation: gallop 0.6s infinite ease-in-out;
+            margin-left: -5px; 
+        }
+
+        @keyframes forward-only-fly {
+            0% { left: -70%; transform: scaleX(-1) translateY(0); }
+            50% { transform: scaleX(-1) translateY(-10px); }
+            100% { left: 120%; transform: scaleX(-1) translateY(0); }
+        }
+
+        @keyframes gallop {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        #audio-toggle { position: fixed; bottom: 20px; right: 20px; background: rgba(255,255,255,0.2); border: 1px solid gold; color: white; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; z-index: 1000; backdrop-filter: blur(5px); }
+        #close-btn { position: absolute; top: 15px; right: 15px; background: var(--deep-red); color: white; border: 2px solid gold; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; display: none; z-index: 101; font-weight: bold;}
+        .card-wrapper.open #close-btn { display: block; }
+        .instruction { position: absolute; bottom: -50px; width: 100%; text-align: center; color: white; animation: pulse 2s infinite; font-size: 0.8rem; letter-spacing: 2px;}
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <button id="audio-toggle">🔊</button>
+    <canvas id="confetti-canvas"></canvas>
+    <div class="snow-overlay" id="snow"></div>
+
+    <div class="card-wrapper" id="card">
+        <button id="close-btn">✕</button>
+        <div class="cover">
+            <div class="cover-front">
+                <div class="tree-container" id="tree-root">
+                    <div class="star">⭐</div>
+                    <div class="branch" style="--w:60px; --h:80px; --m:-20px; z-index:4;"></div>
+                    <div class="branch" style="--w:95px; --h:110px; --m:-60px; z-index:3;"></div>
+                    <div class="branch" style="--w:130px; --h:140px; --m:-80px; z-index:2;"></div>
+                    <div class="branch" style="--w:165px; --h:170px; --m:-100px; z-index:1;"></div>
+                    <div style="width:45px; height:35px; background:linear-gradient(90deg, #3d2319, #5d3a2a); border-radius: 2px; margin-top:-5px;"></div>
+                    <div id="sparkle-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+                </div>
+                <h1 style="background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: clamp(2rem, 8vw, 3rem); margin-top: 20px; text-align: center; line-height: 1; font-weight: normal;">
+                    Merry<br><span style="font-size: 0.6em; letter-spacing: 5px;">CHRISTMAS</span>
+                </h1>
+            </div>
+            <div class="cover-back"></div>
+        </div>
+
+        <div class="inside">
+            <h2>Warmest Wishes</h2>
+            
+            <div style="
+                width: 150px; 
+                height: 170px; 
+                background: white; 
+                padding: 8px 8px 25px 8px; 
+                box-shadow: 0 8px 15px rgba(0,0,0,0.15); 
+                transform: rotate(-2deg);
+                margin: 10px 0;
+                border: 1px solid #eee;
+                transition-delay: 0.7s;">
+                <img src="C:\Users\CELIS\OneDrive\Documents\greetings Card\Untitled design.png" 
+                     alt="Lheneil" 
+                     style="width: 100%; height: 100%; object-fit: cover; border: 1px solid #f0f0f0;">
+            </div>
+
+            <p style="font-size: 1rem; color: #444; line-height: 1.4; max-width: 85%; margin: 5px 0;">
+                May your holiday be filled with<br>
+                joy, peace, and magic of the<br>
+                Christmas season.
+            </p>
+
+            <div style="height: 50px; width: 100%; position: relative; overflow: hidden; margin: 5px 0;">
+                <div class="santa-sleigh">
+                    <span class="reindeer" style="animation-delay: 0.15s;">🦌</span>
+                    <span class="reindeer">🦌</span>
+                    <div class="sleigh-box">
+                        <span class="santa-inside">🎅</span>
+                        <span>🛷</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="signature-container">
+                <span class="rainbow-text">With Love,</span>
+                <span class="name-text">Lheneil</span>
+            </div>
+        </div>
+        
+        <div class="instruction">CLICK TO UNWRAP MAGIC</div>
+    </div>
+
+    <script>
+        const card = document.getElementById('card');
+        const closeBtn = document.getElementById('close-btn');
+        const audioToggle = document.getElementById('audio-toggle');
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        const sparkleLayer = document.getElementById('sparkle-layer');
+        let particles = [];
+
+        function createSparkles() {
+            for (let i = 0; i < 45; i++) {
+                const s = document.createElement('div');
+                s.className = 'sparkle';
+                const size = Math.random() * 6 + 2 + 'px';
+                s.style.width = size; s.style.height = size;
+                const top = Math.random() * 300 + 50;
+                const widthAtTop = (top / 350) * 180;
+                const left = (Math.random() * widthAtTop) - (widthAtTop / 2);
+                s.style.top = top + 'px';
+                s.style.left = `calc(50% + ${left}px)`;
+                s.style.animationDelay = Math.random() * 3 + 's';
+                sparkleLayer.appendChild(s);
+            }
+        }
+        createSparkles();
+
+        const bgMusic = new Audio('https://www.chosic.com/wp-content/uploads/2021/11/Jingle-Bells-3.mp3');
+        bgMusic.loop = true;
+        const chime = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
+
+        // AUDIO TOGGLE FIX
+        audioToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (bgMusic.paused) {
+                bgMusic.play();
+                audioToggle.innerText = '🔊';
+            } else {
+                bgMusic.pause();
+                audioToggle.innerText = '🔈';
+            }
+        });
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 10 + 8;
+                this.speedX = (Math.random() * 14 - 7);
+                this.speedY = (Math.random() * -18 - 5);
+                this.gravity = 0.3;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 10 - 5;
+                
+                // TYPE: 0 = Square, 1 = Curly Ribbon, 2 = Gift Box
+                this.type = Math.floor(Math.random() * 3);
+                this.color = ['#ff0000', '#228b22', '#d4af37', '#ffffff', '#00e5ff'][Math.floor(Math.random() * 5)];
+            }
+            update() { 
+                this.speedY += this.gravity; 
+                this.x += this.speedX; 
+                this.y += this.speedY; 
+                this.rotation += this.rotationSpeed;
+            }
+            draw() {
+                ctx.save(); 
+                ctx.translate(this.x, this.y); 
+                ctx.rotate(this.rotation * Math.PI/180);
+                
+                if (this.type === 1) {
+                    // CURLY CONFETTI
+                    ctx.beginPath();
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 3;
+                    ctx.moveTo(-5, -5);
+                    ctx.bezierCurveTo(5, -5, -5, 5, 5, 10);
+                    ctx.stroke();
+                } else if (this.type === 2) {
+                    // SMALL GIFT BOX
+                    const s = this.size;
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(-s/2, -s/2, s, s);
+                    // Draw Ribbon
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(-s/2, -1, s, 2); // Horizontal
+                    ctx.fillRect(-1, -s/2, 2, s); // Vertical
+                } else {
+                    // REGULAR SQUARE
+                    ctx.fillStyle = this.color; 
+                    ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                }
+                ctx.restore();
+            }
+        }
+
+        function triggerConfetti() {
+            const rect = card.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            // Increased count to show variety
+            for (let i = 0; i < 180; i++) particles.push(new Particle(cx, cy));
+        }
+
+        function handleMove(e) {
+            if (!card.classList.contains('open')) {
+                const px = e.touches ? e.touches[0].pageX : e.pageX;
+                const py = e.touches ? e.touches[0].pageY : e.pageY;
+                const rx = (window.innerWidth / 2 - px) / 15;
+                const ry = (window.innerHeight / 2 - py) / 15;
+                card.style.animation = 'none';
+                card.style.transform = `rotateY(${rx}deg) rotateX(${ry}deg)`;
+            }
+        }
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove);
+
+        card.addEventListener('click', () => {
+            if (card.classList.contains('open')) return;
+            card.classList.add('open');
+            bgMusic.play().catch(()=>{});
+            chime.play().catch(()=>{});
+            setTimeout(triggerConfetti, 500);
+        });
+
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            card.classList.remove('open');
+            card.style.animation = 'autoSway 4s ease-in-out infinite';
+        });
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.update(); p.draw();
+                if (p.y > canvas.height + 50) particles.splice(i, 1);
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        });
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        animate();
+
+        const snow = document.getElementById('snow');
+        for (let i = 0; i < 60; i++) {
+            const f = document.createElement('div');
+            f.className = 'flake'; f.innerHTML = '❄';
+            f.style.left = Math.random() * 100 + 'vw';
+            f.style.animationDuration = (Math.random() * 5 + 7) + 's';
+            f.style.opacity = Math.random();
+            snow.appendChild(f);
+        }
+    </script>
+</body>
+</html>
