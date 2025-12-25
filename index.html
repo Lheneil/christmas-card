@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --card-width: 350px;
+            /* Fix: Use dynamic width for mobile, capped at 350px */
+            --card-width: min(350px, 85vw);
             --card-height: 520px;
             --deep-red: #8b0000;
             --gold-gradient: linear-gradient(45deg, #d4af37, #f7e08a, #b8860b);
@@ -81,9 +82,17 @@
             50% { transform: rotateY(8deg) rotateX(-4deg); }
         }
 
+        /* Responsive Fix: Shift only on desktop, stay centered on mobile */
         .card-wrapper.open {
             transform: translateX(25%) rotateY(0deg) rotateX(0deg) scale(1) !important;
             animation: none;
+        }
+
+        @media (max-width: 600px) {
+            .card-wrapper.open {
+                transform: translateX(0) rotateY(0deg) rotateX(0deg) scale(0.9) !important;
+            }
+            .instruction { font-size: 0.7rem !important; }
         }
 
         .cover {
@@ -187,9 +196,8 @@
         .inside > * { opacity: 0; transform: translateY(20px); transition: 0.8s ease-out; }
         .card-wrapper.open .inside > * { opacity: 1; transform: translateY(0); }
 
-        .inside h2 { transition-delay: 0.4s; color: var(--deep-red); font-family: 'Great Vibes', cursive; font-size: 2.8rem; margin: 0; }
+        .inside h2 { transition-delay: 0.4s; color: var(--deep-red); font-family: 'Great Vibes', cursive; font-size: clamp(2rem, 8vw, 2.8rem); margin: 0; }
         
-        /* --- SIGNATURE SECTION --- */
         .signature-container {
             margin-top: 15px;
             transition-delay: 1.2s;
@@ -197,7 +205,7 @@
 
         .rainbow-text {
             font-family: 'Cinzel', serif;
-            font-size: 1.8rem;
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
             font-weight: 900;
             background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
             background-size: 400% auto;
@@ -211,7 +219,7 @@
 
         .name-text {
             font-family: 'Great Vibes', cursive;
-            font-size: 2.2rem;
+            font-size: clamp(1.8rem, 6vw, 2.2rem);
             color: #000000;
             display: block;
             margin-top: -5px;
@@ -253,9 +261,9 @@
         }
 
         @keyframes forward-only-fly {
-            0% { left: -70%; transform: scaleX(-1) translateY(0); }
+            0% { left: -100%; transform: scaleX(-1) translateY(0); }
             50% { transform: scaleX(-1) translateY(-10px); }
-            100% { left: 120%; transform: scaleX(-1) translateY(0); }
+            100% { left: 150%; transform: scaleX(-1) translateY(0); }
         }
 
         @keyframes gallop {
@@ -289,7 +297,7 @@
                     <div style="width:45px; height:35px; background:linear-gradient(90deg, #3d2319, #5d3a2a); border-radius: 2px; margin-top:-5px;"></div>
                     <div id="sparkle-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
                 </div>
-                <h1 style="background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: clamp(2rem, 8vw, 3rem); margin-top: 20px; text-align: center; line-height: 1; font-weight: normal;">
+                <h1 style="background: var(--gold-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: clamp(1.8rem, 8vw, 3rem); margin-top: 20px; text-align: center; line-height: 1; font-weight: normal;">
                     Merry<br><span style="font-size: 0.6em; letter-spacing: 5px;">CHRISTMAS</span>
                 </h1>
             </div>
@@ -300,8 +308,8 @@
             <h2>Warmest Wishes</h2>
             
             <div style="
-                width: 150px; 
-                height: 170px; 
+                width: 130px; 
+                height: 150px; 
                 background: white; 
                 padding: 8px 8px 25px 8px; 
                 box-shadow: 0 8px 15px rgba(0,0,0,0.15); 
@@ -314,7 +322,7 @@
                      style="width: 100%; height: 100%; object-fit: cover; border: 1px solid #f0f0f0;">
             </div>
 
-            <p style="font-size: 1rem; color: #444; line-height: 1.4; max-width: 85%; margin: 5px 0;">
+            <p style="font-size: 0.95rem; color: #444; line-height: 1.4; max-width: 90%; margin: 5px 0;">
                 May your holiday be filled with<br>
                 joy, peace, and magic of the<br>
                 Christmas season.
@@ -370,7 +378,6 @@
         bgMusic.loop = true;
         const chime = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
 
-        // AUDIO TOGGLE FIX
         audioToggle.addEventListener('click', (e) => {
             e.stopPropagation();
             if (bgMusic.paused) {
@@ -391,8 +398,6 @@
                 this.gravity = 0.3;
                 this.rotation = Math.random() * 360;
                 this.rotationSpeed = Math.random() * 10 - 5;
-                
-                // TYPE: 0 = Square, 1 = Curly Ribbon, 2 = Gift Box
                 this.type = Math.floor(Math.random() * 3);
                 this.color = ['#ff0000', '#228b22', '#d4af37', '#ffffff', '#00e5ff'][Math.floor(Math.random() * 5)];
             }
@@ -408,7 +413,6 @@
                 ctx.rotate(this.rotation * Math.PI/180);
                 
                 if (this.type === 1) {
-                    // CURLY CONFETTI
                     ctx.beginPath();
                     ctx.strokeStyle = this.color;
                     ctx.lineWidth = 3;
@@ -416,16 +420,13 @@
                     ctx.bezierCurveTo(5, -5, -5, 5, 5, 10);
                     ctx.stroke();
                 } else if (this.type === 2) {
-                    // SMALL GIFT BOX
                     const s = this.size;
                     ctx.fillStyle = this.color;
                     ctx.fillRect(-s/2, -s/2, s, s);
-                    // Draw Ribbon
                     ctx.fillStyle = "white";
-                    ctx.fillRect(-s/2, -1, s, 2); // Horizontal
-                    ctx.fillRect(-1, -s/2, 2, s); // Vertical
+                    ctx.fillRect(-s/2, -1, s, 2);
+                    ctx.fillRect(-1, -s/2, 2, s);
                 } else {
-                    // REGULAR SQUARE
                     ctx.fillStyle = this.color; 
                     ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
                 }
@@ -437,8 +438,7 @@
             const rect = card.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
-            // Increased count to show variety
-            for (let i = 0; i < 180; i++) particles.push(new Particle(cx, cy));
+            for (let i = 0; i < 150; i++) particles.push(new Particle(cx, cy));
         }
 
         function handleMove(e) {
@@ -494,5 +494,4 @@
         }
     </script>
 </body>
-
 </html>
