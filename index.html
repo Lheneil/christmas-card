@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Magical 3D Christmas Card - Lheneil</title>
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Fix: Use dynamic width for mobile, capped at 350px */
             --card-width: min(350px, 85vw);
             --card-height: 520px;
             --deep-red: #8b0000;
@@ -15,6 +14,7 @@
             --forest-light: #0d2b1a; 
             --forest-dark: #040d08;
             --pine-green: linear-gradient(180deg, #134e1f 0%, #0a3215 100%);
+            --zoom-scale: 1;
         }
 
         @media (min-width: 600px) {
@@ -74,25 +74,24 @@
             cursor: pointer;
             transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 100;
+            transform: scale(var(--zoom-scale)) rotateY(-8deg) rotateX(4deg);
             animation: autoSway 4s ease-in-out infinite;
         }
 
         @keyframes autoSway {
-            0%, 100% { transform: rotateY(-8deg) rotateX(4deg); }
-            50% { transform: rotateY(8deg) rotateX(-4deg); }
+            0%, 100% { transform: scale(var(--zoom-scale)) rotateY(-8deg) rotateX(4deg); }
+            50% { transform: scale(var(--zoom-scale)) rotateY(8deg) rotateX(-4deg); }
         }
 
-        /* Responsive Fix: Shift only on desktop, stay centered on mobile */
         .card-wrapper.open {
-            transform: translateX(25%) rotateY(0deg) rotateX(0deg) scale(1) !important;
+            transform: scale(var(--zoom-scale)) translateX(25%) rotateY(0deg) rotateX(0deg) !important;
             animation: none;
         }
 
         @media (max-width: 600px) {
             .card-wrapper.open {
-                transform: translateX(0) rotateY(0deg) rotateX(0deg) scale(0.9) !important;
+                transform: scale(calc(var(--zoom-scale) * 0.9)) translateX(0) rotateY(0deg) !important;
             }
-            .instruction { font-size: 0.7rem !important; }
         }
 
         .cover {
@@ -272,15 +271,33 @@
         }
 
         #audio-toggle { position: fixed; bottom: 20px; right: 20px; background: rgba(255,255,255,0.2); border: 1px solid gold; color: white; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; z-index: 1000; backdrop-filter: blur(5px); }
+        
+        #reset-zoom { 
+            position: fixed; 
+            bottom: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: rgba(0,0,0,0.6); 
+            border: 1px solid white; 
+            color: white; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            font-size: 12px; 
+            display: none; 
+            z-index: 1001; 
+            cursor: pointer;
+        }
+
         #close-btn { position: absolute; top: 15px; right: 15px; background: var(--deep-red); color: white; border: 2px solid gold; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; display: none; z-index: 101; font-weight: bold;}
         .card-wrapper.open #close-btn { display: block; }
-        .instruction { position: absolute; bottom: -50px; width: 100%; text-align: center; color: white; animation: pulse 2s infinite; font-size: 0.8rem; letter-spacing: 2px;}
+        .instruction { position: absolute; bottom: -50px; width: 100%; text-align: center; color: white; animation: pulse 2s infinite; font-size: 0.7rem; letter-spacing: 2px;}
         @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <button id="audio-toggle">🔊</button>
+    <button id="reset-zoom">Reset Zoom</button>
     <canvas id="confetti-canvas"></canvas>
     <div class="snow-overlay" id="snow"></div>
 
@@ -352,11 +369,56 @@
         const card = document.getElementById('card');
         const closeBtn = document.getElementById('close-btn');
         const audioToggle = document.getElementById('audio-toggle');
+        const resetZoomBtn = document.getElementById('reset-zoom');
         const canvas = document.getElementById('confetti-canvas');
         const ctx = canvas.getContext('2d');
         const sparkleLayer = document.getElementById('sparkle-layer');
         let particles = [];
 
+        /* --- PINCH TO ZOOM LOGIC --- */
+        let initialDist = 0;
+        let currentScale = 1;
+
+        card.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                initialDist = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+            }
+        }, { passive: true });
+
+        card.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialDist > 0) {
+                const dist = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                let zoom = dist / initialDist;
+                let newScale = Math.min(Math.max(0.6, currentScale * zoom), 2.5);
+                card.style.setProperty('--zoom-scale', newScale);
+                
+                // Show reset button if not at default scale
+                if (Math.abs(newScale - 1) > 0.1) {
+                    resetZoomBtn.style.display = 'block';
+                }
+            }
+        }, { passive: true });
+
+        card.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                currentScale = parseFloat(getComputedStyle(card).getPropertyValue('--zoom-scale')) || 1;
+                initialDist = 0;
+            }
+        });
+
+        resetZoomBtn.addEventListener('click', () => {
+            currentScale = 1;
+            card.style.setProperty('--zoom-scale', 1);
+            resetZoomBtn.style.display = 'none';
+        });
+
+        /* --- SPARKS & CONFETTI --- */
         function createSparkles() {
             for (let i = 0; i < 45; i++) {
                 const s = document.createElement('div');
@@ -411,24 +473,14 @@
                 ctx.save(); 
                 ctx.translate(this.x, this.y); 
                 ctx.rotate(this.rotation * Math.PI/180);
-                
                 if (this.type === 1) {
-                    ctx.beginPath();
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = 3;
-                    ctx.moveTo(-5, -5);
-                    ctx.bezierCurveTo(5, -5, -5, 5, 5, 10);
-                    ctx.stroke();
+                    ctx.beginPath(); ctx.strokeStyle = this.color; ctx.lineWidth = 3;
+                    ctx.moveTo(-5, -5); ctx.bezierCurveTo(5, -5, -5, 5, 5, 10); ctx.stroke();
                 } else if (this.type === 2) {
-                    const s = this.size;
-                    ctx.fillStyle = this.color;
-                    ctx.fillRect(-s/2, -s/2, s, s);
-                    ctx.fillStyle = "white";
-                    ctx.fillRect(-s/2, -1, s, 2);
-                    ctx.fillRect(-1, -s/2, 2, s);
+                    const s = this.size; ctx.fillStyle = this.color; ctx.fillRect(-s/2, -s/2, s, s);
+                    ctx.fillStyle = "white"; ctx.fillRect(-s/2, -1, s, 2); ctx.fillRect(-1, -s/2, 2, s);
                 } else {
-                    ctx.fillStyle = this.color; 
-                    ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                    ctx.fillStyle = this.color; ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
                 }
                 ctx.restore();
             }
@@ -442,13 +494,14 @@
         }
 
         function handleMove(e) {
-            if (!card.classList.contains('open')) {
+            // Disable tilt if pinching
+            if (!card.classList.contains('open') && (!e.touches || e.touches.length < 2)) {
                 const px = e.touches ? e.touches[0].pageX : e.pageX;
                 const py = e.touches ? e.touches[0].pageY : e.pageY;
                 const rx = (window.innerWidth / 2 - px) / 15;
                 const ry = (window.innerHeight / 2 - py) / 15;
                 card.style.animation = 'none';
-                card.style.transform = `rotateY(${rx}deg) rotateX(${ry}deg)`;
+                card.style.transform = `scale(var(--zoom-scale)) rotateY(${rx}deg) rotateX(${ry}deg)`;
             }
         }
         document.addEventListener('mousemove', handleMove);
